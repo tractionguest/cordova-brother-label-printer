@@ -4,70 +4,70 @@ const NSString *BPContextCallbackIdKey = @"CallbackId";
 const NSString *BPContextImageKey = @"image";
 
 @implementation BrotherPrinter {
-	NSMutableArray *_brotherDeviceList;
-	BRPtouchNetworkManager *_networkManager;
+    NSMutableArray *_brotherDeviceList;
+    BRPtouchNetworkManager *_networkManager;
     BRPtouchBluetoothManager *_bluetoothManager;
-	BRPtouchPrinter *_ptp;
-	UIImage *_image;
-	void (^_callback)(NSArray *, NSError *);
+    BRPtouchPrinter *_ptp;
+    UIImage *_image;
+    void (^_callback)(NSArray *, NSError *);
 
-	NSArray* printerList;
-	NSArray* supportedPrinterList;
+    NSArray* printerList;
+    NSArray* supportedPrinterList;
 }
 @synthesize operationQueue = _operationQueue;
 
 -(void)pluginInitialize {
-	[super pluginInitialize];
-	_operationQueue = [NSOperationQueue mainQueue]; // [[NSOperationQueue alloc] init];
-	printerList = @[
-		@"Brother RJ-4040",
-		@"Brother RJ-3150",
-		@"Brother RJ-3150Ai",
-		@"Brother RJ-3050",
-		@"Brother RJ-3050Ai",
-		@"Brother QL-710W",
-		@"Brother QL-720NW",
-		@"Brother QL-810W",
-		@"Brother QL-820NWB",
-		@"Brother PT-E550W",
-		@"Brother PT-P750W",
-		@"Brother PT-D800W",
-		@"Brother PT-E800W",
-		@"Brother PT-E850TKW",
-		@"Brother PT-P900W",
-		@"Brother PT-P950NW",
-		@"Brother TD-2120N",
-		@"Brother TD-2130N",
-		@"Brother PJ-673",
-		@"Brother PJ-763",
-		@"Brother PJ-773",
-		@"Brother MW-145MF",
-		@"Brother MW-260MF",
-		@"Brother RJ-4030Ai",
-		@"Brother RJ-2050",
-		@"Brother RJ-2140",
-		@"Brother RJ-2150"];
+    [super pluginInitialize];
+    _operationQueue = [NSOperationQueue mainQueue]; // [[NSOperationQueue alloc] init];
+    printerList = @[
+        @"Brother RJ-4040",
+        @"Brother RJ-3150",
+        @"Brother RJ-3150Ai",
+        @"Brother RJ-3050",
+        @"Brother RJ-3050Ai",
+        @"Brother QL-710W",
+        @"Brother QL-720NW",
+        @"Brother QL-810W",
+        @"Brother QL-820NWB",
+        @"Brother PT-E550W",
+        @"Brother PT-P750W",
+        @"Brother PT-D800W",
+        @"Brother PT-E800W",
+        @"Brother PT-E850TKW",
+        @"Brother PT-P900W",
+        @"Brother PT-P950NW",
+        @"Brother TD-2120N",
+        @"Brother TD-2130N",
+        @"Brother PJ-673",
+        @"Brother PJ-763",
+        @"Brother PJ-773",
+        @"Brother MW-145MF",
+        @"Brother MW-260MF",
+        @"Brother RJ-4030Ai",
+        @"Brother RJ-2050",
+        @"Brother RJ-2140",
+        @"Brother RJ-2150"];
 
-	supportedPrinterList = @[
-		@"Brother QL-710W",
-		@"Brother QL-720NW",
-		@"Brother QL-810W",
-		@"Brother QL-820NWB"];
+    supportedPrinterList = @[
+        @"Brother QL-710W",
+        @"Brother QL-720NW",
+        @"Brother QL-810W",
+        @"Brother QL-820NWB"];
 
 }
 
 - (NSArray *)suffixedPrinterList:(NSArray *)list {
-	NSMutableArray *result = [NSMutableArray array];
-	NSUInteger count = list.count;
-	for (NSUInteger i = 0; i < count; i++) {
-		[result addObject:[list[i] componentsSeparatedByString:@" "][1]];
-	}
+    NSMutableArray *result = [NSMutableArray array];
+    NSUInteger count = list.count;
+    for (NSUInteger i = 0; i < count; i++) {
+        [result addObject:[list[i] componentsSeparatedByString:@" "][1]];
+    }
 
-	return result;
+    return result;
 }
 
 -(void)convertDeviceList:(NSArray *)deviceList asType:(NSString*)type withCompletion:(void (^)(NSArray *, NSError *))completion {
-	__block NSMutableArray *resultList = [NSMutableArray array];
+    __block NSMutableArray *resultList = [NSMutableArray array];
     [deviceList enumerateObjectsUsingBlock:^(BRPtouchDeviceInfo *deviceInfo, NSUInteger idx, BOOL *stop) {
         NSMutableDictionary* dict = [NSMutableDictionary dictionary];
         if (deviceInfo.strIPAddress && ![@"" isEqual:deviceInfo.strIPAddress]) {
@@ -85,13 +85,13 @@ const NSString *BPContextImageKey = @"image";
         if (deviceInfo.strSerialNumber && ![@"" isEqual:deviceInfo.strSerialNumber]) {
             dict[@"serialNumber"] = deviceInfo.strSerialNumber;
         }
-        
+
         dict[@"port"] = type;
-        
+
         [resultList addObject:[dict copy]];
     }];
 
-	completion(resultList, nil);
+    completion(resultList, nil);
 }
 
 -(void)pairedDevicesWithCompletion:(void (^)(NSArray *result, NSError *error))completion {
@@ -107,15 +107,15 @@ const NSString *BPContextImageKey = @"image";
 -(void)networkPrintersWithCompletion:(void (^)(NSArray *result, NSError *error))completion {
     [self checkNetworkManager];
 
-	_callback = completion;
+    _callback = completion;
 
-	[_networkManager setPrinterNames: supportedPrinterList];
-	[_networkManager startSearch: 5.0];
+    [_networkManager setPrinterNames: supportedPrinterList];
+    [_networkManager startSearch: 5.0];
 }
 
 #pragma mark - BRPtouchNetworkDelegate
 -(void)didFinishSearch:(id)sender {
-	NSArray* deviceList = [_networkManager getPrinterNetInfo];
+    NSArray* deviceList = [_networkManager getPrinterNetInfo];
     [self convertDeviceList:deviceList asType:@"NET" withCompletion:^(NSArray* resultList, NSError* error) {
         NSLog(@"resultList: %@", resultList);
         if (_callback) {
@@ -127,20 +127,20 @@ const NSString *BPContextImageKey = @"image";
 
 #pragma mark - Plugin Commands
 -(void)findNetworkPrinters:(CDVInvokedUrlCommand*)command {
-	[self.commandDelegate runInBackground:^{
-		[self networkPrintersWithCompletion:^(NSArray* networkPrinters, NSError *error) {
-			if (error) {
-				[self.commandDelegate
-					 sendPluginResult:[self errorResult:@"findNetworkPrinters" withCode:1 withMessage:[NSString stringWithFormat:@"unable to find network printers: %@", [error localizedDescription]]]
-					       callbackId:command.callbackId];
-				return;
-			}
+    [self.commandDelegate runInBackground:^{
+        [self networkPrintersWithCompletion:^(NSArray* networkPrinters, NSError *error) {
+            if (error) {
+                [self.commandDelegate
+                     sendPluginResult:[self errorResult:@"findNetworkPrinters" withCode:1 withMessage:[NSString stringWithFormat:@"unable to find network printers: %@", [error localizedDescription]]]
+                           callbackId:command.callbackId];
+                return;
+            }
 
-			[self.commandDelegate
-				 sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:networkPrinters]
-				       callbackId:command.callbackId];
+            [self.commandDelegate
+                 sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:networkPrinters]
+                       callbackId:command.callbackId];
 
-		}];
+        }];
     }];
 }
 
@@ -186,7 +186,7 @@ const NSString *BPContextImageKey = @"image";
         [[self suffixedPrinterList:supportedPrinterList] enumerateObjectsUsingBlock:^(NSString *printerName, NSUInteger index, BOOL *stop) {
             keep = keep || [evaluatedObject hasPrefix:printerName];
         }];
-        
+
         return keep;
     }];
 
@@ -242,262 +242,262 @@ const NSString *BPContextImageKey = @"image";
                  sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:[finalList copy]]
                  callbackId:command.callbackId];
             }];
-            
+
         }];
 
 //    }];
-	return;
+    return;
 }
 
 -(void)setPrinter:(CDVInvokedUrlCommand*)command {
-	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
-	NSDictionary *obj = [command.arguments objectAtIndex:0];
-	if (!obj) {
-		[self.commandDelegate
-			sendPluginResult:[self errorResult:@"setPrinter" withCode:1 withMessage:@"expected an object as the first argument."]
-			      callbackId:command.callbackId];
-		return;
-	}
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    NSDictionary *obj = [command.arguments objectAtIndex:0];
+    if (!obj) {
+        [self.commandDelegate
+            sendPluginResult:[self errorResult:@"setPrinter" withCode:1 withMessage:@"expected an object as the first argument."]
+                  callbackId:command.callbackId];
+        return;
+    }
 
-	NSString *ipAddress = obj[@"ipAddress"];
-	NSString *modelName = obj[@"modelName"];
+    NSString *ipAddress = obj[@"ipAddress"];
+    NSString *modelName = obj[@"modelName"];
     NSString *serialNumber = obj[@"serialNumber"];
-	if (!modelName) {
-		[self.commandDelegate
-			sendPluginResult:[self errorResult:@"setPrinter" withCode:2 withMessage:@"expected a \"modelName\" key in the given object."]
-			      callbackId:command.callbackId];
-		return;
-	}
-	[userDefaults
-		setObject:modelName
-		   forKey:kSelectedDevice];
+    if (!modelName) {
+        [self.commandDelegate
+            sendPluginResult:[self errorResult:@"setPrinter" withCode:2 withMessage:@"expected a \"modelName\" key in the given object."]
+                  callbackId:command.callbackId];
+        return;
+    }
+    [userDefaults
+        setObject:modelName
+           forKey:kSelectedDevice];
 
-	NSString *port = obj[@"port"];
-	if (!port) {
-		[self.commandDelegate
-			sendPluginResult:[self errorResult:@"setPrinter" withCode:2 withMessage:@"expected a \"port\" key in the given object."]
-			      callbackId:command.callbackId];
-		return;
-	}
+    NSString *port = obj[@"port"];
+    if (!port) {
+        [self.commandDelegate
+            sendPluginResult:[self errorResult:@"setPrinter" withCode:2 withMessage:@"expected a \"port\" key in the given object."]
+                  callbackId:command.callbackId];
+        return;
+    }
 
-	if ([@"BLUETOOTH" isEqualToString:port]) {
-		[userDefaults
-			setObject:@"0"
-			   forKey:kIsWiFi];
-		[userDefaults
-			setObject:@"1"
-			   forKey:kIsBluetooth];
-	}
+    if ([@"BLUETOOTH" isEqualToString:port]) {
+        [userDefaults
+            setObject:@"0"
+               forKey:kIsWiFi];
+        [userDefaults
+            setObject:@"1"
+               forKey:kIsBluetooth];
+    }
 
-	if ([@"NET" isEqualToString:port]) {
-		[userDefaults
-			setObject:@"1"
-			   forKey:kIsWiFi];
-		[userDefaults
-			setObject:@"0"
-			   forKey:kIsBluetooth];
-	}
+    if ([@"NET" isEqualToString:port]) {
+        [userDefaults
+            setObject:@"1"
+               forKey:kIsWiFi];
+        [userDefaults
+            setObject:@"0"
+               forKey:kIsBluetooth];
+    }
 
-	[userDefaults
-		setObject:ipAddress
-		   forKey:kIPAddress];
+    [userDefaults
+        setObject:ipAddress
+           forKey:kIPAddress];
 
-	[userDefaults
-		setObject:serialNumber
-		   forKey:kSerialNumber];
+    [userDefaults
+        setObject:serialNumber
+           forKey:kSerialNumber];
 
-	[userDefaults synchronize];
+    [userDefaults synchronize];
 
-	// Send okay
-	[self.commandDelegate
-		sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
-		      callbackId:command.callbackId];
+    // Send okay
+    [self.commandDelegate
+        sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
+              callbackId:command.callbackId];
 }
 
 -(NSInteger)integerValueFromDefaults:(NSUserDefaults *)userDefaults forKey:(NSString *)key withFallback:(NSInteger)fallback {
-	if ([userDefaults objectForKey:key] == nil) {
-		return fallback;
-	}
+    if ([userDefaults objectForKey:key] == nil) {
+        return fallback;
+    }
 
-	return [userDefaults integerForKey:key];
+    return [userDefaults integerForKey:key];
 }
 
 -(NSString *)stringValueFromDefaults:(NSUserDefaults *)userDefaults forKey:(NSString *)key withFallback:(NSString *)fallback {
-	NSString *str = [userDefaults stringForKey:key];
-	if (str == nil) {
-		return fallback;
-	}
+    NSString *str = [userDefaults stringForKey:key];
+    if (str == nil) {
+        return fallback;
+    }
 
-	return str;
+    return str;
 }
 
 -(double)doubleValueFromDefaults:(NSUserDefaults *)userDefaults forKey:(NSString *)key withFallback:(double)fallback {
-	if ([userDefaults objectForKey:key] == nil) {
-		return fallback;
-	}
+    if ([userDefaults objectForKey:key] == nil) {
+        return fallback;
+    }
 
-	return [userDefaults doubleForKey:key];
+    return [userDefaults doubleForKey:key];
 }
 
 -(void)printViaSDK:(CDVInvokedUrlCommand*)command {
-	NSString* base64Data = [command.arguments objectAtIndex:0];
-	if (base64Data == nil) {
-		[self.commandDelegate
-			sendPluginResult:[self errorResult:@"printViaSDK" withCode:1 withMessage:@"expected a string as the first argument."]
-			      callbackId:command.callbackId];
-		return;
-	}
+    NSString* base64Data = [command.arguments objectAtIndex:0];
+    if (base64Data == nil) {
+        [self.commandDelegate
+            sendPluginResult:[self errorResult:@"printViaSDK" withCode:1 withMessage:@"expected a string as the first argument."]
+                  callbackId:command.callbackId];
+        return;
+    }
 
-	NSData *imageData              = [[NSData alloc] initWithBase64EncodedString:base64Data options:NSDataBase64DecodingIgnoreUnknownCharacters];
-	UIImage *image                 = [[UIImage alloc] initWithData:imageData];
+    NSData *imageData              = [[NSData alloc] initWithBase64EncodedString:base64Data options:NSDataBase64DecodingIgnoreUnknownCharacters];
+    UIImage *image                 = [[UIImage alloc] initWithData:imageData];
 
-	NSUserDefaults *userDefaults   = [NSUserDefaults standardUserDefaults];
+    NSUserDefaults *userDefaults   = [NSUserDefaults standardUserDefaults];
 
-	NSString *selectedDevice       = [userDefaults stringForKey:kSelectedDevice];
+    NSString *selectedDevice       = [userDefaults stringForKey:kSelectedDevice];
 
-	NSString *ipAddress            = [userDefaults stringForKey:kIPAddress];
-	NSString *serialNumber         = [userDefaults stringForKey:kSerialNumber];
+    NSString *ipAddress            = [userDefaults stringForKey:kIPAddress];
+    NSString *serialNumber         = [userDefaults stringForKey:kSerialNumber];
 
-	// Set the Print Info
-	// PrintInfo
-	BRPtouchPrintInfo *printInfo   = [[BRPtouchPrintInfo alloc] init];
+    // Set the Print Info
+    // PrintInfo
+    BRPtouchPrintInfo *printInfo   = [[BRPtouchPrintInfo alloc] init];
 
-	NSString *numPaper             = [self stringValueFromDefaults:userDefaults forKey:kPrintNumberOfPaperKey withFallback:@"1"]; // Item 1
+    NSString *numPaper             = [self stringValueFromDefaults:userDefaults forKey:kPrintNumberOfPaperKey withFallback:@"1"]; // Item 1
 
-	printInfo.strPaperName         = [self stringValueFromDefaults:userDefaults forKey:kPrintNumberOfPaperKey withFallback:@"62mm"]; // Item 2
-	printInfo.nOrientation         = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintOrientationKey withFallback:Landscape]; // Item 3
-	printInfo.nPrintMode           = (int)[self integerValueFromDefaults:userDefaults forKey:kScalingModeKey withFallback:Fit]; // Item 4
-	printInfo.scaleValue           = [self doubleValueFromDefaults:userDefaults forKey:kScalingFactorKey withFallback:1.0]; // Item 5
+    printInfo.strPaperName         = [self stringValueFromDefaults:userDefaults forKey:kPrintNumberOfPaperKey withFallback:@"62mm"]; // Item 2
+    printInfo.nOrientation         = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintOrientationKey withFallback:Landscape]; // Item 3
+    printInfo.nPrintMode           = (int)[self integerValueFromDefaults:userDefaults forKey:kScalingModeKey withFallback:Fit]; // Item 4
+    printInfo.scaleValue           = [self doubleValueFromDefaults:userDefaults forKey:kScalingFactorKey withFallback:1.0]; // Item 5
 
-	printInfo.nHalftone            = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintHalftoneKey withFallback:Dither]; // Item 6
-	printInfo.nHorizontalAlign     = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintHorizintalAlignKey withFallback:Left]; // Item 7
-	printInfo.nVerticalAlign       = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintVerticalAlignKey withFallback:Top]; // Item 8
-	printInfo.nPaperAlign          = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintPaperAlignKey withFallback:PaperLeft]; // Item 9
+    printInfo.nHalftone            = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintHalftoneKey withFallback:Dither]; // Item 6
+    printInfo.nHorizontalAlign     = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintHorizintalAlignKey withFallback:Left]; // Item 7
+    printInfo.nVerticalAlign       = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintVerticalAlignKey withFallback:Top]; // Item 8
+    printInfo.nPaperAlign          = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintPaperAlignKey withFallback:PaperLeft]; // Item 9
 
-	printInfo.nExtFlag            |= (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCodeKey withFallback:CodeOff]; // Item 10
-	printInfo.nExtFlag            |= (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCarbonKey withFallback:CarbonOff]; // Item 11
-	printInfo.nExtFlag            |= (int)[self integerValueFromDefaults:userDefaults forKey:kPrintDashKey withFallback:DashOff]; // Item 12
-	printInfo.nExtFlag            |= (int)[self integerValueFromDefaults:userDefaults forKey:kPrintFeedModeKey withFallback:FixPage]; // Item 13
+    printInfo.nExtFlag            |= (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCodeKey withFallback:CodeOff]; // Item 10
+    printInfo.nExtFlag            |= (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCarbonKey withFallback:CarbonOff]; // Item 11
+    printInfo.nExtFlag            |= (int)[self integerValueFromDefaults:userDefaults forKey:kPrintDashKey withFallback:DashOff]; // Item 12
+    printInfo.nExtFlag            |= (int)[self integerValueFromDefaults:userDefaults forKey:kPrintFeedModeKey withFallback:FixPage]; // Item 13
 
-	printInfo.nRollPrinterCase     = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCurlModeKey withFallback:CurlModeOff]; // Item 14
-	printInfo.nSpeed               = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintSpeedKey withFallback:Fast]; // Item 15
-	printInfo.bBidirection         = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintBidirectionKey withFallback:BidirectionOff]; // Item 16
+    printInfo.nRollPrinterCase     = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCurlModeKey withFallback:CurlModeOff]; // Item 14
+    printInfo.nSpeed               = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintSpeedKey withFallback:Fast]; // Item 15
+    printInfo.bBidirection         = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintBidirectionKey withFallback:BidirectionOff]; // Item 16
 
-	printInfo.nCustomFeed          = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintFeedMarginKey withFallback:0]; // Item 17
-	printInfo.nCustomLength        = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCustomLengthKey withFallback:0]; // Item 18
-	printInfo.nCustomWidth         = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCustomWidthKey withFallback:0]; // Item 19
+    printInfo.nCustomFeed          = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintFeedMarginKey withFallback:0]; // Item 17
+    printInfo.nCustomLength        = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCustomLengthKey withFallback:0]; // Item 18
+    printInfo.nCustomWidth         = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCustomWidthKey withFallback:0]; // Item 19
 
-	printInfo.nAutoCutFlag        |= (int)[self integerValueFromDefaults:userDefaults forKey:kPrintAutoCutKey withFallback:AutoCutOn]; // Item 20
-	printInfo.bEndcut              = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCutAtEndKey withFallback:CutAtEndOn]; // Item 21
-	printInfo.bHalfCut             = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintHalfCutKey withFallback:HalfCutOff]; // Item 22
-	printInfo.bSpecialTape         = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintSpecialTapeKey withFallback:SpecialTapeOff]; // Item 23
-	printInfo.bRotate180           = (int)[self integerValueFromDefaults:userDefaults forKey:kRotateKey withFallback:RotateOff]; // Item 24
-	printInfo.bPeel                = (int)[self integerValueFromDefaults:userDefaults forKey:kPeelKey withFallback:PeelOff]; // Item 25
+    printInfo.nAutoCutFlag        |= (int)[self integerValueFromDefaults:userDefaults forKey:kPrintAutoCutKey withFallback:AutoCutOn]; // Item 20
+    printInfo.bEndcut              = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCutAtEndKey withFallback:CutAtEndOn]; // Item 21
+    printInfo.bHalfCut             = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintHalfCutKey withFallback:HalfCutOff]; // Item 22
+    printInfo.bSpecialTape         = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintSpecialTapeKey withFallback:SpecialTapeOff]; // Item 23
+    printInfo.bRotate180           = (int)[self integerValueFromDefaults:userDefaults forKey:kRotateKey withFallback:RotateOff]; // Item 24
+    printInfo.bPeel                = (int)[self integerValueFromDefaults:userDefaults forKey:kPeelKey withFallback:PeelOff]; // Item 25
 
 //	NSString *customPaper          = [self stringValueFromDefaults:userDefaults forKey:kPrintCustomPaperKey withFallback:@""]; // Item 26
 //	NSString *customPaperFilePath  = nil;
 
-	printInfo.bCutMark             = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCutMarkKey withFallback:CutMarkOff]; // Item 27
-	printInfo.nLabelMargine        = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintLabelMargineKey withFallback:0]; // Item 28
+    printInfo.bCutMark             = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCutMarkKey withFallback:CutMarkOff]; // Item 27
+    printInfo.nLabelMargine        = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintLabelMargineKey withFallback:0]; // Item 28
 
-	if ([selectedDevice rangeOfString:@"RJ-"].location != NSNotFound ||
-		[selectedDevice rangeOfString:@"TD-"].location != NSNotFound) {
-		printInfo.nDensity         = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintDensityMax5Key withFallback:DensityMax5Level1]; // Item 29
-	}
-	else if([selectedDevice rangeOfString:@"PJ-"].location != NSNotFound){
-		printInfo.nDensity         = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintDensityMax10Key withFallback:DensityMax10Level5]; // Item 30
-	}
-	else {
-		// Error
-		printInfo.nDensity         = (int)[self integerValueFromDefaults:userDefaults forKey:@"density" withFallback:DensityMax5Level0];
-	}
+    if ([selectedDevice rangeOfString:@"RJ-"].location != NSNotFound ||
+        [selectedDevice rangeOfString:@"TD-"].location != NSNotFound) {
+        printInfo.nDensity         = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintDensityMax5Key withFallback:DensityMax5Level1]; // Item 29
+    }
+    else if([selectedDevice rangeOfString:@"PJ-"].location != NSNotFound){
+        printInfo.nDensity         = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintDensityMax10Key withFallback:DensityMax10Level5]; // Item 30
+    }
+    else {
+        // Error
+        printInfo.nDensity         = (int)[self integerValueFromDefaults:userDefaults forKey:@"density" withFallback:DensityMax5Level0];
+    }
 
-	printInfo.nTopMargin           = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintTopMarginKey withFallback:0]; // Item 31
-	printInfo.nLeftMargin          = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintLeftMarginKey withFallback:0]; // Item 32
+    printInfo.nTopMargin           = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintTopMarginKey withFallback:0]; // Item 31
+    printInfo.nLeftMargin          = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintLeftMarginKey withFallback:0]; // Item 32
 
-	NSInteger isWifi      = [userDefaults integerForKey:kIsWiFi];
-	NSInteger isBluetooth = [userDefaults integerForKey:kIsBluetooth];
+    NSInteger isWifi      = [userDefaults integerForKey:kIsWiFi];
+    NSInteger isBluetooth = [userDefaults integerForKey:kIsBluetooth];
 
-	if (isBluetooth == 1) {
+    if (isBluetooth == 1) {
         [self checkBluetoothManager];
-		__block NSString *finalDeviceName = nil;
-		[[self suffixedPrinterList:supportedPrinterList] enumerateObjectsUsingBlock:^(NSString *printerName, NSUInteger index, BOOL *stop) {
-			if([selectedDevice hasPrefix:printerName]) {
-				finalDeviceName = [NSString stringWithFormat:@"Brother %@", printerName];
-			}
-		}];
+        __block NSString *finalDeviceName = nil;
+        [[self suffixedPrinterList:supportedPrinterList] enumerateObjectsUsingBlock:^(NSString *printerName, NSUInteger index, BOOL *stop) {
+            if([selectedDevice hasPrefix:printerName]) {
+                finalDeviceName = [NSString stringWithFormat:@"Brother %@", printerName];
+            }
+        }];
 
-		_ptp = [[BRPtouchPrinter alloc] initWithPrinterName:finalDeviceName interface:CONNECTION_TYPE_BLUETOOTH];
+        _ptp = [[BRPtouchPrinter alloc] initWithPrinterName:finalDeviceName interface:CONNECTION_TYPE_BLUETOOTH];
 
-	} else if (isWifi == 1) {
-		_ptp = [[BRPtouchPrinter alloc] initWithPrinterName:selectedDevice interface:CONNECTION_TYPE_WLAN];
-	} else {
-		_ptp = nil;
-	}
+    } else if (isWifi == 1) {
+        _ptp = [[BRPtouchPrinter alloc] initWithPrinterName:selectedDevice interface:CONNECTION_TYPE_WLAN];
+    } else {
+        _ptp = nil;
+    }
 
-	if (!_ptp) {
-		// oh noes!
+    if (!_ptp) {
+        // oh noes!
         [self.commandDelegate
          sendPluginResult:[self errorResult:@"printViaSDK" withCode:2 withMessage:@"no printer could be determined."]
-			      callbackId:command.callbackId];
-		return;
-	}
+                  callbackId:command.callbackId];
+        return;
+    }
 
     NSDictionary* context = @{
                               BPContextCallbackIdKey:command.callbackId,
                               BPContextImageKey:image
                               };
-	NSOperation *operation = nil;
-	if (isBluetooth == 1) {
+    NSOperation *operation = nil;
+    if (isBluetooth == 1) {
         [self checkBluetoothManager];
-		BRBluetoothPrintOperation *bluetoothPrintOperation = [[BRBluetoothPrintOperation alloc]
-						   initWithOperation:_ptp
-						           printInfo:printInfo
-						              imgRef:[_image CGImage]
-						       numberOfPaper:[numPaper intValue]
-						        serialNumber:serialNumber];
+        BRBluetoothPrintOperation *bluetoothPrintOperation = [[BRBluetoothPrintOperation alloc]
+                           initWithOperation:_ptp
+                                   printInfo:printInfo
+                                      imgRef:[_image CGImage]
+                               numberOfPaper:[numPaper intValue]
+                                serialNumber:serialNumber];
 
-		[bluetoothPrintOperation addObserver:self
-					 forKeyPath:@"isFinishedForBT"
-					    options:NSKeyValueObservingOptionNew
+        [bluetoothPrintOperation addObserver:self
+                     forKeyPath:@"isFinishedForBT"
+                        options:NSKeyValueObservingOptionNew
                         context:(__bridge void * _Nullable)context];
 
-		[bluetoothPrintOperation addObserver:self
-					forKeyPath:@"communicationResultForBT"
-					   options:NSKeyValueObservingOptionNew
+        [bluetoothPrintOperation addObserver:self
+                    forKeyPath:@"communicationResultForBT"
+                       options:NSKeyValueObservingOptionNew
                                      context:(__bridge void * _Nullable)context];
 
-		operation = bluetoothPrintOperation;
+        operation = bluetoothPrintOperation;
 
-	} else if (isWifi == 1) {
-		BRWLANPrintOperation *wlanPrintOperation = [[BRWLANPrintOperation alloc]
-						initWithOperation:_ptp
-						         printInfo:printInfo
-						            imgRef:[_image CGImage]
-						     numberOfPaper:[numPaper intValue]
-						         ipAddress:ipAddress];
+    } else if (isWifi == 1) {
+        BRWLANPrintOperation *wlanPrintOperation = [[BRWLANPrintOperation alloc]
+                        initWithOperation:_ptp
+                                 printInfo:printInfo
+                                    imgRef:[_image CGImage]
+                             numberOfPaper:[numPaper intValue]
+                                 ipAddress:ipAddress];
 
-		[wlanPrintOperation addObserver:self
-					forKeyPath:@"isFinishedForWLAN"
-					   options:NSKeyValueObservingOptionNew
+        [wlanPrintOperation addObserver:self
+                    forKeyPath:@"isFinishedForWLAN"
+                       options:NSKeyValueObservingOptionNew
                                 context:(__bridge void * _Nullable)context];
 
-		[wlanPrintOperation addObserver:self
-					forKeyPath:@"communicationResultForWLAN"
-					   options:NSKeyValueObservingOptionNew
+        [wlanPrintOperation addObserver:self
+                    forKeyPath:@"communicationResultForWLAN"
+                       options:NSKeyValueObservingOptionNew
                                 context:(__bridge void * _Nullable)context];
 
-		operation = wlanPrintOperation;
+        operation = wlanPrintOperation;
 
-	} else {
+    } else {
 
-	}
+    }
 
-	if (!operation) {
-		return;
-	}
+    if (!operation) {
+        return;
+    }
 
-	[_operationQueue addOperation:operation];
+    [_operationQueue addOperation:operation];
 }
 
 
@@ -589,25 +589,25 @@ const NSString *BPContextImageKey = @"image";
 }
 
 -(void)observeValueForKeyPath:(NSString *)keyPath
-					 ofObject:(id)object
-					   change:(NSDictionary *)change
-					 context:(void *)context {
+                     ofObject:(id)object
+                       change:(NSDictionary *)change
+                     context:(void *)context {
 
     NSDictionary *contextDict = (__bridge NSDictionary*)context;
     NSString *callbackId = contextDict[BPContextCallbackIdKey];
 
-	NSOperation *operation = (NSOperation *)object;
-	if ([@"isFinishedForWLAN" isEqualToString:keyPath]) {
+    NSOperation *operation = (NSOperation *)object;
+    if ([@"isFinishedForWLAN" isEqualToString:keyPath]) {
         [self finishedForWLAN:operation withCallbackId:callbackId];
-	} else if ([@"isFinishedForBT" isEqualToString:keyPath]) {
+    } else if ([@"isFinishedForBT" isEqualToString:keyPath]) {
         [self finishedForBT:operation withCallbackId:callbackId];
-	} else if ([@"communicationResultForWLAN" isEqualToString:keyPath]) {
+    } else if ([@"communicationResultForWLAN" isEqualToString:keyPath]) {
         [self communicationResultForWLAN:operation withCallbackId:callbackId];
-	} else if ([@"communicationResultForBT" isEqualToString:keyPath]) {
+    } else if ([@"communicationResultForBT" isEqualToString:keyPath]) {
         [self communicationResultForBT:operation withCallbackId:callbackId];
-	} else {
-		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
-	}
+    } else {
+        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+    }
 }
 
 #pragma mark - Error Handler
