@@ -394,9 +394,6 @@ const NSString *BPContextImageKey = @"image";
     printInfo.bRotate180           = (int)[self integerValueFromDefaults:userDefaults forKey:kRotateKey withFallback:RotateOff]; // Item 24
     printInfo.bPeel                = (int)[self integerValueFromDefaults:userDefaults forKey:kPeelKey withFallback:PeelOff]; // Item 25
 
-//	NSString *customPaper          = [self stringValueFromDefaults:userDefaults forKey:kPrintCustomPaperKey withFallback:@""]; // Item 26
-//	NSString *customPaperFilePath  = nil;
-
     printInfo.bCutMark             = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCutMarkKey withFallback:CutMarkOff]; // Item 27
     printInfo.nLabelMargine        = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintLabelMargineKey withFallback:0]; // Item 28
 
@@ -455,17 +452,18 @@ const NSString *BPContextImageKey = @"image";
                                    printInfo:printInfo
                                       imgRef:[_image CGImage]
                                numberOfPaper:[numPaper intValue]
-                                serialNumber:serialNumber];
+                                serialNumber:serialNumber
+                                    withDict:context];
 
         [bluetoothPrintOperation addObserver:self
                      forKeyPath:@"isFinishedForBT"
                         options:NSKeyValueObservingOptionNew
-                        context:(__bridge void * _Nullable)context];
+                        context:nil];
 
         [bluetoothPrintOperation addObserver:self
                     forKeyPath:@"communicationResultForBT"
                        options:NSKeyValueObservingOptionNew
-                                     context:(__bridge void * _Nullable)context];
+                                     context:nil];
 
         operation = bluetoothPrintOperation;
 
@@ -475,17 +473,18 @@ const NSString *BPContextImageKey = @"image";
                                  printInfo:printInfo
                                     imgRef:[_image CGImage]
                              numberOfPaper:[numPaper intValue]
-                                 ipAddress:ipAddress];
+                                 ipAddress:ipAddress
+                                  withDict:context];
 
         [wlanPrintOperation addObserver:self
                     forKeyPath:@"isFinishedForWLAN"
                        options:NSKeyValueObservingOptionNew
-                                context:(__bridge void * _Nullable)context];
+                                context:nil];
 
         [wlanPrintOperation addObserver:self
                     forKeyPath:@"communicationResultForWLAN"
                        options:NSKeyValueObservingOptionNew
-                                context:(__bridge void * _Nullable)context];
+                                context:nil];
 
         operation = wlanPrintOperation;
 
@@ -508,11 +507,10 @@ const NSString *BPContextImageKey = @"image";
     [operation removeObserver:self forKeyPath:@"communicationResultForWLAN"];
 
     BRWLANPrintOperation *wlanOperation = (BRWLANPrintOperation *) operation;
-//    BOOL result = wlanOperation.communicationResultForWLAN;
     PTSTATUSINFO resultStatus = wlanOperation.resultStatus;
 
-    if (resultStatus.byErrorInf != ERROR_NONE_) {
-        CDVPluginResult *result = [self errorResult:@"WLAN" withCode:resultStatus.byErrorInf withMessage:[self errorMessageFromStatusInfo:resultStatus.byErrorInf]];
+    if (wlanOperation.errorCode != ERROR_NONE_) {
+        CDVPluginResult *result = [self errorResult:@"WLAN" withCode:wlanOperation.errorCode withMessage:[self errorMessageFromStatusInfo:wlanOperation.errorCode]];
 
         [self.commandDelegate
             sendPluginResult:result
@@ -531,11 +529,10 @@ const NSString *BPContextImageKey = @"image";
     [operation removeObserver:self forKeyPath:@"communicationResultForBT"];
 
     BRWLANPrintOperation *wlanOperation = (BRWLANPrintOperation *) operation;
-//    BOOL result = wlanOperation.communicationResultForWLAN;
     PTSTATUSINFO resultStatus = wlanOperation.resultStatus;
 
-    if (resultStatus.byErrorInf != ERROR_NONE_) {
-        CDVPluginResult *result = [self errorResult:@"Bluetooth" withCode:resultStatus.byErrorInf withMessage:[self errorMessageFromStatusInfo:resultStatus.byErrorInf]];
+    if (wlanOperation.errorCode != ERROR_NONE_) {
+        CDVPluginResult *result = [self errorResult:@"Bluetooth" withCode:wlanOperation.errorCode withMessage:[self errorMessageFromStatusInfo:wlanOperation.errorCode]];
 
         [self.commandDelegate
             sendPluginResult:result
@@ -552,40 +549,30 @@ const NSString *BPContextImageKey = @"image";
 -(void)communicationResultForWLAN:(NSOperation *)operation withCallbackId:(NSString *)callbackId {
     BRWLANPrintOperation *wlanOperation = (BRWLANPrintOperation *) operation;
     BOOL result = wlanOperation.communicationResultForWLAN;
-    NSLog(@"Communication Result: %d", result);
     if (!result) {
         [operation removeObserver:self forKeyPath:@"isFinishedForWLAN"];
         [operation removeObserver:self forKeyPath:@"communicationResultForWLAN"];
-        PTSTATUSINFO resultStatus = wlanOperation.resultStatus;
+        CDVPluginResult *result = [self errorResult:@"WLAN" withCode:1 withMessage:@"unable to connect with device."];
 
-        if (resultStatus.byErrorInf != ERROR_NONE_) {
-            CDVPluginResult *result = [self errorResult:@"WLAN" withCode:resultStatus.byErrorInf withMessage:[self errorMessageFromStatusInfo:resultStatus.byErrorInf]];
-
-            [self.commandDelegate
-             sendPluginResult:result
-             callbackId:callbackId];
-        }
+        [self.commandDelegate
+            sendPluginResult:result
+                  callbackId:callbackId];
     }
 }
 
 -(void)communicationResultForBT:(NSOperation *)operation withCallbackId:(NSString *)callbackId {
     BRBluetoothPrintOperation *bluetoothOperation = (BRBluetoothPrintOperation *) operation;
     BOOL result = bluetoothOperation.communicationResultForBT;
-    NSLog(@"Communication Result: %d", result);
+
     if (!result) {
         [operation removeObserver:self forKeyPath:@"isFinishedForBT"];
         [operation removeObserver:self forKeyPath:@"communicationResultForBT"];
-        PTSTATUSINFO resultStatus = bluetoothOperation.resultStatus;
+        CDVPluginResult *result = [self errorResult:@"Bluetooth" withCode:1 withMessage:@"unable to connect with device."];
 
-        if (resultStatus.byErrorInf != ERROR_NONE_) {
-            CDVPluginResult *result = [self errorResult:@"Bluetooth" withCode:resultStatus.byErrorInf withMessage:[self errorMessageFromStatusInfo:resultStatus.byErrorInf]];
-
-            [self.commandDelegate
-                sendPluginResult:result
-                      callbackId:callbackId];
-        }
+        [self.commandDelegate
+            sendPluginResult:result
+                  callbackId:callbackId];
     }
-
 }
 
 -(void)observeValueForKeyPath:(NSString *)keyPath
@@ -593,17 +580,18 @@ const NSString *BPContextImageKey = @"image";
                        change:(NSDictionary *)change
                      context:(void *)context {
 
-    NSDictionary *contextDict = (__bridge NSDictionary*)context;
-    NSString *callbackId = contextDict[BPContextCallbackIdKey];
-
     NSOperation *operation = (NSOperation *)object;
     if ([@"isFinishedForWLAN" isEqualToString:keyPath]) {
+        NSString *callbackId = ((BRWLANPrintOperation *)operation).dict[BPContextCallbackIdKey];
         [self finishedForWLAN:operation withCallbackId:callbackId];
     } else if ([@"isFinishedForBT" isEqualToString:keyPath]) {
+        NSString *callbackId = ((BRBluetoothPrintOperation *)operation).dict[BPContextCallbackIdKey];
         [self finishedForBT:operation withCallbackId:callbackId];
     } else if ([@"communicationResultForWLAN" isEqualToString:keyPath]) {
+        NSString *callbackId = ((BRWLANPrintOperation *)operation).dict[BPContextCallbackIdKey];
         [self communicationResultForWLAN:operation withCallbackId:callbackId];
     } else if ([@"communicationResultForBT" isEqualToString:keyPath]) {
+        NSString *callbackId = ((BRBluetoothPrintOperation *)operation).dict[BPContextCallbackIdKey];
         [self communicationResultForBT:operation withCallbackId:callbackId];
     } else {
         [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
@@ -615,7 +603,7 @@ const NSString *BPContextImageKey = @"image";
     return [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:@{@"code":[NSNumber numberWithInteger:code], @"message":message, @"namespace":namespace}];
 }
 
--(NSString *)errorMessageFromStatusInfo:(int8_t)statusInfo {
+-(NSString *)errorMessageFromStatusInfo:(NSInteger)statusInfo {
     switch (statusInfo) {
         case ERROR_NONE_:
             return @"none";
