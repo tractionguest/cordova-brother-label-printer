@@ -8,7 +8,6 @@ const NSString *BPContextImageKey = @"image";
     BRPtouchNetworkManager *_networkManager;
     BRPtouchBluetoothManager *_bluetoothManager;
     BRPtouchPrinter *_ptp;
-    UIImage *_image;
     void (^_callback)(NSArray *, NSError *);
 
     NSArray* printerList;
@@ -70,19 +69,23 @@ const NSString *BPContextImageKey = @"image";
     __block NSMutableArray *resultList = [NSMutableArray array];
     [deviceList enumerateObjectsUsingBlock:^(BRPtouchDeviceInfo *deviceInfo, NSUInteger idx, BOOL *stop) {
         NSMutableDictionary* dict = [NSMutableDictionary dictionary];
-        if (deviceInfo.strIPAddress && ![@"" isEqual:deviceInfo.strIPAddress]) {
+        if (deviceInfo.strIPAddress && ![@"" isEqualToString:deviceInfo.strIPAddress]) {
             dict[@"ipAddress"] = deviceInfo.strIPAddress;
         }
 
-        if (deviceInfo.strMACAddress && ![@"" isEqual:deviceInfo.strMACAddress]) {
+        if (deviceInfo.strMACAddress && ![@"" isEqualToString:deviceInfo.strMACAddress]) {
             dict[@"macAddress"] = deviceInfo.strMACAddress;
         }
 
-        if (deviceInfo.strModelName && ![@"" isEqual:deviceInfo.strModelName]) {
+        if(deviceInfo.strPrinterName && ![@"" isEqualToString:deviceInfo.strPrinterName]) {
+            dict[@"name"] = deviceInfo.strPrinterName;
+        }
+
+        if (deviceInfo.strModelName && ![@"" isEqualToString:deviceInfo.strModelName]) {
             dict[@"modelName"] = deviceInfo.strModelName;
         }
 
-        if (deviceInfo.strSerialNumber && ![@"" isEqual:deviceInfo.strSerialNumber]) {
+        if (deviceInfo.strSerialNumber && ![@"" isEqualToString:deviceInfo.strSerialNumber]) {
             dict[@"serialNumber"] = deviceInfo.strSerialNumber;
         }
 
@@ -394,6 +397,9 @@ const NSString *BPContextImageKey = @"image";
     printInfo.bRotate180           = (int)[self integerValueFromDefaults:userDefaults forKey:kRotateKey withFallback:RotateOff]; // Item 24
     printInfo.bPeel                = (int)[self integerValueFromDefaults:userDefaults forKey:kPeelKey withFallback:PeelOff]; // Item 25
 
+    NSString *customPaper          = [self stringValueFromDefaults:userDefaults forKey:kPrintCustomPaperKey withFallback:@""]; // Item 26
+    NSString *customPaperFilePath  = nil;
+
     printInfo.bCutMark             = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintCutMarkKey withFallback:CutMarkOff]; // Item 27
     printInfo.nLabelMargine        = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintLabelMargineKey withFallback:0]; // Item 28
 
@@ -450,7 +456,7 @@ const NSString *BPContextImageKey = @"image";
         BRBluetoothPrintOperation *bluetoothPrintOperation = [[BRBluetoothPrintOperation alloc]
                            initWithOperation:_ptp
                                    printInfo:printInfo
-                                      imgRef:[_image CGImage]
+                                      imgRef:[image CGImage]
                                numberOfPaper:[numPaper intValue]
                                 serialNumber:serialNumber
                                     withDict:context];
@@ -471,7 +477,7 @@ const NSString *BPContextImageKey = @"image";
         BRWLANPrintOperation *wlanPrintOperation = [[BRWLANPrintOperation alloc]
                         initWithOperation:_ptp
                                  printInfo:printInfo
-                                    imgRef:[_image CGImage]
+                                    imgRef:[image CGImage]
                              numberOfPaper:[numPaper intValue]
                                  ipAddress:ipAddress
                                   withDict:context];
