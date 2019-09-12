@@ -13,8 +13,11 @@ function handleError(callback) {
         var message = obj.message || 'unknown message';
 
         var err = new Error(message);
-        err.code = code;
+        err.error_code = code;
+        err.description = namespace + ': ' + message;
         err.namespace = namespace;
+        err.date = Date.now();
+
         callback(err);
     }
 }
