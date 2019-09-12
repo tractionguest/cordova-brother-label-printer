@@ -265,6 +265,8 @@ const NSString *BPContextImageKey = @"image";
     NSString *ipAddress = obj[@"ipAddress"];
     NSString *modelName = obj[@"modelName"];
     NSString *serialNumber = obj[@"serialNumber"];
+    NSString *paperSize = obj[@"paperSize"];
+
     if (!modelName) {
         [self.commandDelegate
             sendPluginResult:[self errorResult:@"setPrinter" withCode:2 withMessage:@"expected a \"modelName\" key in the given object."]
@@ -308,6 +310,8 @@ const NSString *BPContextImageKey = @"image";
     [userDefaults
         setObject:serialNumber
            forKey:kSerialNumber];
+
+    [userDefaults setObject:paperSize forKey:kPrintPaperSizeKey];
 
     [userDefaults synchronize];
 
@@ -367,7 +371,7 @@ const NSString *BPContextImageKey = @"image";
 
     NSString *numPaper             = [self stringValueFromDefaults:userDefaults forKey:kPrintNumberOfPaperKey withFallback:@"1"]; // Item 1
 
-    printInfo.strPaperName         = [self stringValueFromDefaults:userDefaults forKey:kPrintNumberOfPaperKey withFallback:@"62mm"]; // Item 2
+    printInfo.strPaperName         = [self stringValueFromDefaults:userDefaults forKey:kPrintPaperSizeKey withFallback:@"62mm"]; // Item 2
     printInfo.nOrientation         = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintOrientationKey withFallback:Landscape]; // Item 3
     printInfo.nPrintMode           = (int)[self integerValueFromDefaults:userDefaults forKey:kScalingModeKey withFallback:Fit]; // Item 4
     printInfo.scaleValue           = [self doubleValueFromDefaults:userDefaults forKey:kScalingFactorKey withFallback:1.0]; // Item 5
