@@ -536,14 +536,35 @@ const NSString *BPContextImageKey = @"image";
 
 #pragma mark - Helpers
 
+-(CDVPluginResult *)resultForType:(NSString *)printerType {
+    CDVPluginResult *result;
+    
+    // Setup variables for retry
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    int maxNumberOfRetries = (int)[self integerValueFromDefaults:userDefaults forKey:kMaxNumberOfRetries withFallback:kDefaultMaxNumberOfRetries]; // Item 33
+    int retryTimeInSeconds = (double)[self integerValueFromDefaults:userDefaults forKey:kRetryTimeInSeconds withFallback:kDefaultRetryTimeInSeconds]; // Item 34
+
+    // if there is an error, try to requeue after X seconds
+    if (numberOfRetries < maxNumberOfRetries) {
+        [NSTimer scheduledTimerWithTimeInterval:retryTimeInSeconds
+                                            target:self
+                                        selector:@selector(retryPrint)
+                                        userInfo:nil
+                                        repeats:NO];
+        numberOfRetries++;
+        result = [self errorResult:printerType withCode:1 withMessage:[NSString stringWithFormat:@"unable to connect with device. Retrying in %i seconds (retries left: %i)", retryTimeInSeconds, maxNumberOfRetries-numberOfRetries]];
+    } else {
+        // else, if max number of retries reached, send error and reset retries variable
+        result = [self errorResult:printerType withCode:1 withMessage:@"unable to connect with device."];
+        [self resetCachedCommand];
+    }
+    
+    return result;
+}
+
 -(void)retryPrint{
     if (cachedCommand) {
         [self printViaSDK:cachedCommand];
-    } else {
-        result = [self errorResult:@"Queue" withCode:1 withMessage:@"unable to retry queued print."];
-        [self.commandDelegate
-            sendPluginResult:result
-                  callbackId:callbackId];
     }
 }
 
@@ -606,27 +627,7 @@ const NSString *BPContextImageKey = @"image";
     if (!result) {
         [operation removeObserver:self forKeyPath:@"isFinishedForWLAN"];
         [operation removeObserver:self forKeyPath:@"communicationResultForWLAN"];
-        CDVPluginResult *result;
-        
-        // Setup variables for retry
-        NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
-        int maxNumberOfRetries = (int)[self integerValueFromDefaults:userDefaults forKey:kMaxNumberOfRetries withFallback:kDefaultMaxNumberOfRetries]; // Item 33
-        int retryTimeInSeconds = (double)[self integerValueFromDefaults:userDefaults forKey:kRetryTimeInSeconds withFallback:kDefaultRetryTimeInSeconds]; // Item 34
-
-        // if there is an error, try to requeue after X seconds
-        if (numberOfRetries < maxNumberOfRetries) {
-            [NSTimer scheduledTimerWithTimeInterval:retryTimeInSeconds
-                                             target:self
-                                           selector:@selector(retryPrint)
-                                           userInfo:nil
-                                            repeats:NO];
-            numberOfRetries++;
-            result = [self errorResult:@"WLAN" withCode:1 withMessage:[NSString stringWithFormat:@"unable to connect with device. Retrying in %i seconds (retries left: %i)", retryTimeInSeconds, maxNumberOfRetries-numberOfRetries]];
-        } else {
-            // else, if max number of retries reached, send error and reset retries variable
-            result = [self errorResult:@"WLAN" withCode:1 withMessage:@"unable to connect with device."];
-            [self resetCachedCommand];
-        }
+        CDVPluginResult *result = [self resultForType:@"WLAN"];
         
         [self.commandDelegate
             sendPluginResult:result
@@ -641,27 +642,7 @@ const NSString *BPContextImageKey = @"image";
     if (!result) {
         [operation removeObserver:self forKeyPath:@"isFinishedForBT"];
         [operation removeObserver:self forKeyPath:@"communicationResultForBT"];
-        CDVPluginResult *result;
-
-        // Setup variables for retry
-        NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
-        int maxNumberOfRetries = (int)[self integerValueFromDefaults:userDefaults forKey:kMaxNumberOfRetries withFallback:kDefaultMaxNumberOfRetries]; // Item 33
-        int retryTimeInSeconds = (double)[self integerValueFromDefaults:userDefaults forKey:kRetryTimeInSeconds withFallback:kDefaultRetryTimeInSeconds]; // Item 34
-
-        // if there is an error, try to requeue after X seconds
-        if (numberOfRetries < maxNumberOfRetries) {
-            [NSTimer scheduledTimerWithTimeInterval:retryTimeInSeconds
-                                             target:self
-                                           selector:@selector(retryPrint)
-                                           userInfo:nil
-                                            repeats:NO];
-            numberOfRetries++;
-            result = [self errorResult:@"Bluetooth" withCode:1 withMessage:[NSString stringWithFormat:@"unable to connect with device. Retrying in %i seconds (retries left: %i)", retryTimeInSeconds, maxNumberOfRetries-numberOfRetries]];
-        } else {
-            // else, if max number of retries reached, send error and reset retries variable
-            result = [self errorResult:@"Bluetooth" withCode:1 withMessage:@"unable to connect with device."];
-            [self resetCachedCommand];
-        }
+        CDVPluginResult *result = [self resultForType:@"Bluetooth"];
         
         [self.commandDelegate
             sendPluginResult:result
