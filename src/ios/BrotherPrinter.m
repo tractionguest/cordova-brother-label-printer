@@ -539,6 +539,11 @@ const NSString *BPContextImageKey = @"image";
 -(void)retryPrint{
     if (cachedCommand) {
         [self printViaSDK:cachedCommand];
+    } else {
+        result = [self errorResult:@"Queue" withCode:1 withMessage:@"unable to retry queued print."];
+        [self.commandDelegate
+            sendPluginResult:result
+                  callbackId:callbackId];
     }
 }
 
