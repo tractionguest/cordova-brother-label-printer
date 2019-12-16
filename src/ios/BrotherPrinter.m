@@ -552,12 +552,11 @@ const NSString *BPContextImageKey = @"image";
                                         userInfo:nil
                                         repeats:NO];
         numberOfRetries++;
-        result = [self errorResult:printerType withCode:1 withMessage:[NSString stringWithFormat:@"unable to connect with device. Retrying in %i seconds (retries left: %i)", retryTimeInSeconds, maxNumberOfRetries-numberOfRetries]];
     } else {
-        // else, if max number of retries reached, send error and reset retries variable
-        result = [self errorResult:printerType withCode:1 withMessage:@"unable to connect with device."];
+        // else, if max number of retries reached, reset retries variable
         [self resetCachedCommand];
     }
+    result = [self errorResult:printerType withCode:1 withMessage:@"unable to connect with device."];
     
     return result;
 }
