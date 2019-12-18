@@ -277,4 +277,10 @@ enum PrintDensityMax10Key
 // Item32
 #define kPrintLeftMarginKey		@"PrintLeftMarginKey"
 
+// Item33
+#define kMaxNumberOfRetries     @"MaxNumberOfRetries"
+
+// Item34
+#define kRetryTimeInSeconds     @"RetryTimeInSeconds"
+
 #endif
