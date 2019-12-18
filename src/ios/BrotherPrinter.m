@@ -1,5 +1,7 @@
 #import "BrotherPrinter.h"
 
+const double kDefaultRetryTimeInSeconds = 2.0;
+const double kDefaultMaxNumberOfRetries = 5;
 const NSString *BPContextCallbackIdKey = @"CallbackId";
 const NSString *BPContextImageKey = @"image";
 
@@ -12,11 +14,15 @@ const NSString *BPContextImageKey = @"image";
 
     NSArray* printerList;
     NSArray* supportedPrinterList;
+    CDVInvokedUrlCommand *cachedCommand;
+    int numberOfRetries;
 }
 @synthesize operationQueue = _operationQueue;
 
 -(void)pluginInitialize {
     [super pluginInitialize];
+    cachedCommand = [[CDVInvokedUrlCommand alloc] init];
+    numberOfRetries = 0;
     _operationQueue = [NSOperationQueue mainQueue]; // [[NSOperationQueue alloc] init];
     printerList = @[
         @"Brother RJ-4040",
@@ -266,6 +272,8 @@ const NSString *BPContextImageKey = @"image";
     NSString *modelName = obj[@"modelName"];
     NSString *serialNumber = obj[@"serialNumber"];
     NSString *paperSize = obj[@"paperSize"];
+    NSString *maxNumberOfRetries = obj[@"maxNumberOfRetries"];
+    NSString *retryTimeInSeconds = obj[@"retryTimeInSeconds"];
 
     if (!modelName) {
         [self.commandDelegate
@@ -312,6 +320,10 @@ const NSString *BPContextImageKey = @"image";
            forKey:kSerialNumber];
 
     [userDefaults setObject:paperSize forKey:kPrintPaperSizeKey];
+    
+    // retry settings
+    [userDefaults setObject:maxNumberOfRetries forKey:kMaxNumberOfRetries];
+    [userDefaults setObject:retryTimeInSeconds forKey:kRetryTimeInSeconds];
 
     [userDefaults synchronize];
 
@@ -347,6 +359,18 @@ const NSString *BPContextImageKey = @"image";
 }
 
 -(void)printViaSDK:(CDVInvokedUrlCommand*)command {
+    if (command) {
+        cachedCommand = command;
+    } else {
+        if (!cachedCommand) {
+            [self.commandDelegate
+             sendPluginResult:[self errorResult:@"printViaSDK" withCode:1 withMessage:@"expected a command (new or cached)."]
+             callbackId:command.callbackId];
+            return;
+        }
+        command = cachedCommand;
+    }
+    
     NSString* base64Data = [command.arguments objectAtIndex:0];
     if (base64Data == nil) {
         [self.commandDelegate
@@ -510,6 +534,43 @@ const NSString *BPContextImageKey = @"image";
 }
 
 
+#pragma mark - Helpers
+
+-(CDVPluginResult *)resultForType:(NSString *)printerType {
+    CDVPluginResult *result;
+    
+    // Setup variables for retry
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    int maxNumberOfRetries = (int)[self integerValueFromDefaults:userDefaults forKey:kMaxNumberOfRetries withFallback:kDefaultMaxNumberOfRetries]; // Item 33
+    int retryTimeInSeconds = (double)[self integerValueFromDefaults:userDefaults forKey:kRetryTimeInSeconds withFallback:kDefaultRetryTimeInSeconds]; // Item 34
+
+    // if there is an error, try to requeue after X seconds
+    if (numberOfRetries < maxNumberOfRetries) {
+        [NSTimer scheduledTimerWithTimeInterval:retryTimeInSeconds
+                                            target:self
+                                        selector:@selector(retryPrint)
+                                        userInfo:nil
+                                        repeats:NO];
+        numberOfRetries++;
+    } else {
+        // else, if max number of retries reached, reset retries variable
+        [self resetCachedCommand];
+    }
+    
+    return [self errorResult:printerType withCode:1 withMessage:@"unable to connect with device."];
+}
+
+-(void)retryPrint{
+    if (cachedCommand) {
+        [self printViaSDK:cachedCommand];
+    }
+}
+
+-(void)resetCachedCommand {
+    numberOfRetries = 0;
+    cachedCommand = nil;
+}
+
 #pragma mark - Observers
 
 -(void)finishedForWLAN:(NSOperation *)operation withCallbackId:(NSString *)callbackId {
@@ -528,6 +589,7 @@ const NSString *BPContextImageKey = @"image";
 
         return;
     }
+    [self resetCachedCommand];
 
     [self.commandDelegate
         sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
@@ -550,6 +612,7 @@ const NSString *BPContextImageKey = @"image";
 
         return;
     }
+    [self resetCachedCommand];
 
     [self.commandDelegate
         sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
@@ -562,8 +625,8 @@ const NSString *BPContextImageKey = @"image";
     if (!result) {
         [operation removeObserver:self forKeyPath:@"isFinishedForWLAN"];
         [operation removeObserver:self forKeyPath:@"communicationResultForWLAN"];
-        CDVPluginResult *result = [self errorResult:@"WLAN" withCode:1 withMessage:@"unable to connect with device."];
-
+        CDVPluginResult *result = [self resultForType:@"WLAN"];
+        
         [self.commandDelegate
             sendPluginResult:result
                   callbackId:callbackId];
@@ -577,8 +640,8 @@ const NSString *BPContextImageKey = @"image";
     if (!result) {
         [operation removeObserver:self forKeyPath:@"isFinishedForBT"];
         [operation removeObserver:self forKeyPath:@"communicationResultForBT"];
-        CDVPluginResult *result = [self errorResult:@"Bluetooth" withCode:1 withMessage:@"unable to connect with device."];
-
+        CDVPluginResult *result = [self resultForType:@"Bluetooth"];
+        
         [self.commandDelegate
             sendPluginResult:result
                   callbackId:callbackId];
