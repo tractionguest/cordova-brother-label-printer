@@ -400,7 +400,7 @@ const NSString *BPContextImageKey = @"image";
     printInfo.nPrintMode           = (int)[self integerValueFromDefaults:userDefaults forKey:kScalingModeKey withFallback:Fit]; // Item 4
     printInfo.scaleValue           = [self doubleValueFromDefaults:userDefaults forKey:kScalingFactorKey withFallback:1.0]; // Item 5
 
-    printInfo.nHalftone            = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintHalftoneKey withFallback:Dither]; // Item 6
+    printInfo.nHalftone            = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintHalftoneKey withFallback:ErrorDiffusion]; // Item 6
     printInfo.nHorizontalAlign     = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintHorizintalAlignKey withFallback:Left]; // Item 7
     printInfo.nVerticalAlign       = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintVerticalAlignKey withFallback:Top]; // Item 8
     printInfo.nPaperAlign          = (int)[self integerValueFromDefaults:userDefaults forKey:kPrintPaperAlignKey withFallback:PaperLeft]; // Item 9
