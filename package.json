@@ -1,6 +1,6 @@
 {
 	"name": "cordova-brother-label-printer",
-	"version": "0.0.7",
+	"version": "0.0.8",
 	"description": "Cordova hooks for Brother Print SDK",
 	"cordova": {
 		"id": "cordova-brother-label-printer",
