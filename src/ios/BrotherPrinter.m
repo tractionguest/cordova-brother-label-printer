@@ -57,7 +57,8 @@ const NSString *BPContextImageKey = @"image";
         @"Brother QL-710W",
         @"Brother QL-720NW",
         @"Brother QL-810W",
-        @"Brother QL-820NWB"];
+        @"Brother QL-820NWB",
+        @"Brother QL-1110NWB"];
 
 }
 
